@@ -20,7 +20,6 @@ commands=(
         "ping 192.168.200.10 -I uesimtun17 -c 1 -w 1"
         "ping 192.168.200.10 -I uesimtun18 -c 1 -w 1"
         "ping 192.168.200.10 -I uesimtun19 -c 1 -w 1"
-
 )
 for cmd in "${commands[@]}"; do
         $cmd &
