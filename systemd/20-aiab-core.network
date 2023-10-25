@@ -1,0 +1,17 @@
+# Copyright 2022-present Open Networking Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+[Match]
+Name=core
+
+[Network]
+IPForward=yes
+Address=192.168.254.1/24
+
+[Route]
+Gateway=192.168.254.2
+Destination=172.250.0.0/16
+
+[Route]
+Gateway=192.168.254.2
+Destination=192.168.250.0/24

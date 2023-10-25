@@ -1,0 +1,104 @@
+---
+# Source: sd-core/charts/omec-user-plane/templates/service-upf.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: exitlb
+  labels:
+    release: sd-core
+    app: exitlb
+spec:
+  type: ClusterIP
+  selector:
+    release: sd-core
+    app: exitlb
+  ports:
+  - name: exitlb-web
+    protocol: TCP
+    port: 8080
+---
+# Source: sd-core/charts/omec-user-plane/templates/statefulset-upf.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: exitlb
+  labels:
+    release: sd-core
+    app: exitlb
+spec:
+  replicas: 1
+  serviceName: exitlb-headless
+  selector:
+    matchLabels:
+      release: sd-core
+      app: exitlb
+  template:
+    metadata:
+      labels:
+        release: sd-core
+        app: exitlb
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[
+          {
+            "name": "exitlb-net",
+            "interface": "core",
+            "ips": ["192.168.254.2/24"]
+          },
+          {
+            "name": "core-upf101-net",
+            "interface": "upf101",
+            "ips": ["192.168.250.101/32"]
+          },
+          {
+            "name": "core-upf102-net",
+            "interface": "upf102",
+            "ips": ["192.168.250.102/32"]
+          },
+          {
+            "name": "core-upf103-net",
+            "interface": "upf103",
+            "ips": ["192.168.250.103/32"]
+          },
+          {
+            "name": "core-upf104-net",
+            "interface": "upf104",
+            "ips": ["192.168.250.104/32"]
+          }
+        ]'
+    spec:
+      shareProcessNamespace: true
+      imagePullSecrets:
+        - name: aether.registry
+      containers:
+      - name: pfcp-agent
+        image: "parhamds/exitlb:v0.0.14"
+        imagePullPolicy: "IfNotPresent"
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        stdin: true
+        tty: true
+        command: ["sh", "-xec"]
+        args:
+        - echo 1 > /proc/sys/net/ipv4/ip_forward;
+          ip route replace default via 192.168.254.1;
+          iptables -F;
+          arptables -A INPUT -s 192.168.250.3 -d 192.168.250.0/24 -j DROP;
+          arptables -A INPUT -s 192.168.252.3 -d 192.168.252.0/24 -j DROP;
+          echo 101 lb-upf101 >> /etc/iproute2/rt_tables;
+          echo 102 lb-upf102 >> /etc/iproute2/rt_tables;
+          echo 103 lb-upf103 >> /etc/iproute2/rt_tables;
+          echo 104 lb-upf104 >> /etc/iproute2/rt_tables;
+          ip rule add fwmark 101 table lb-upf101;
+          ip rule add fwmark 102 table lb-upf102;
+          ip rule add fwmark 103 table lb-upf103;
+          ip rule add fwmark 104 table lb-upf104;
+          ip route add 172.250.0.0/16 dev upf101 table lb-upf101;
+          ip route add 172.250.0.0/16 dev upf102 table lb-upf102;
+          ip route add 172.250.0.0/16 dev upf103 table lb-upf103;
+          ip route add 172.250.0.0/16 dev upf104 table lb-upf104;
+          ip route add 192.168.250.3 dev upf101 table lb-upf101;
+          ip route add 192.168.250.3 dev upf102 table lb-upf102;
+          ip route add 192.168.250.3 dev upf103 table lb-upf103;
+          ip route add 192.168.250.3 dev upf104 table lb-upf104;
+          ./exitlb;
