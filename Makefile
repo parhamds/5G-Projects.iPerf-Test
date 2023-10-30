@@ -50,22 +50,22 @@ NO_PROXY        ?= ${no_proxy}
 ONECLOUD	?= false
 
 DATA_IFACE ?= data
-RAN_IFACE  ?= data
+INT_IFACE  ?= data
 ifeq ($(DATA_IFACE), data)
 	RAN_SUBNET := 192.168.251.0/24
 else
 	RAN_SUBNET := $(shell ip route | grep $${DATA_IFACE} | awk '/kernel/ {print $$1}' | head -1)
 	DATA_IFACE_PATH := $(shell find /*/systemd/network -maxdepth 1 -not -type d -name '*$(DATA_IFACE).network' -print)
 	DATA_IFACE_CONF ?= $(shell basename $(DATA_IFACE_PATH)).d
-	RAN_IFACE_PATH := $(shell find /*/systemd/network -maxdepth 1 -not -type d -name '*$(RAN_IFACE).network' -print)
-	RAN_IFACE_CONF ?= $(shell basename $(RAN_IFACE_PATH)).d
+	INT_IFACE_PATH := $(shell find /*/systemd/network -maxdepth 1 -not -type d -name '*$(INT_IFACE).network' -print)
+	INT_IFACE_CONF ?= $(shell basename $(RAN_IFACE_PATH)).d
 endif
 
 # systemd-networkd and systemd configs
 LO_NETCONF            := /etc/systemd/network/20-aiab-lo.network
 OAISIM_NETCONF        := $(LO_NETCONF) /etc/systemd/network/10-aiab-enb.netdev /etc/systemd/network/20-aiab-enb.network
 ROUTER_POD_NETCONF    := /etc/systemd/network/10-aiab-dummy.netdev /etc/systemd/network/20-aiab-dummy.network
-ROUTER_HOST_NETCONF   := /etc/systemd/network/10-aiab-access.netdev /etc/systemd/network/20-aiab-access.network /etc/systemd/network/10-aiab-core.netdev /etc/systemd/network/20-aiab-core.network /etc/systemd/network/$(DATA_IFACE_CONF)/macvlan-sd.conf /etc/systemd/network/$(RAN_IFACE_CONF)/macvlan-ran.conf
+ROUTER_HOST_NETCONF   := /etc/systemd/network/10-aiab-access.netdev /etc/systemd/network/20-aiab-access.network /etc/systemd/network/10-aiab-core.netdev /etc/systemd/network/20-aiab-core.network /etc/systemd/network/$(DATA_IFACE_CONF)/macvlan-access.conf
 UE_NAT_CONF           := /etc/systemd/system/aiab-ue-nat.service
 
 # monitoring
@@ -306,6 +306,8 @@ $(M)/router-pod: $(ROUTER_POD_NETCONF)
 	@touch $@
 router-host: | $(M)/router-host
 $(M)/router-host: $(ROUTER_HOST_NETCONF) $(UE_NAT_CONF)
+	mkdir /etc/systemd/network/10-netplan-$(INT_IFACE).network.d
+	cp systemd/macvlan-core.conf /etc/systemd/network/10-netplan-$(INT_IFACE).network.d/macvlan-core.conf
 	sudo systemctl daemon-reload
 	sudo systemctl enable aiab-ue-nat.service
 	sudo systemctl start aiab-ue-nat.service
