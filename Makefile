@@ -308,6 +308,7 @@ router-host: | $(M)/router-host
 $(M)/router-host: $(ROUTER_HOST_NETCONF) $(UE_NAT_CONF)
 	mkdir /etc/systemd/network/10-netplan-$(INT_IFACE).network.d
 	cp systemd/macvlan-core.conf /etc/systemd/network/10-netplan-$(INT_IFACE).network.d/macvlan-core.conf
+	sed 's/INT_IFACE/$(INT_IFACE)/g' /etc/systemd/network/10-netplan-$(INT_IFACE).network.d/macvlan-core.conf > /etc/systemd/network/10-netplan-$(INT_IFACE).network.d/macvlan-core.conf
 	sudo systemctl daemon-reload
 	sudo systemctl enable aiab-ue-nat.service
 	sudo systemctl start aiab-ue-nat.service
