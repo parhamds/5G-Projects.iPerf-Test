@@ -142,8 +142,8 @@ data:
           mtu: 1460
           ue-dnn-qos:
             bitrate-unit: bps
-            dnn-mbr-downlink: 100000000
-            dnn-mbr-uplink: 100000000
+            dnn-mbr-downlink: 1000000000
+            dnn-mbr-uplink: 1000000000
             traffic-class:
               arp: 6
               name: platinum
@@ -171,8 +171,8 @@ data:
           mtu: 1460
           ue-dnn-qos:
             bitrate-unit: bps
-            dnn-mbr-downlink: 100000000
-            dnn-mbr-uplink: 100000000
+            dnn-mbr-downlink: 1000000000
+            dnn-mbr-uplink: 1000000000
             traffic-class:
               arp: 6
               name: platinum
